@@ -116,8 +116,68 @@ def get_advice(req: dict):
 
 @app.get("/api/safe-spots")
 def get_safe_spots(lat: float, lng: float):
-    # Mocking Safe Spots based on user's location
-    # In reality, this would use Google Places API and Firebase
+    # Try fetching real data from OpenStreetMap (Overpass API) based on state location
+    real_spots = []
+    try:
+        import urllib.request
+        import urllib.parse
+        import json
+        import math
+        
+        query = f"""
+        [out:json];
+        (
+          node["amenity"="hospital"](around:8000, {lat}, {lng});
+          node["amenity"="drinking_water"](around:8000, {lat}, {lng});
+          node["amenity"="place_of_worship"]["religion"="sikh"](around:10000, {lat}, {lng});
+          node["amenity"="library"](around:8000, {lat}, {lng});
+          node["amenity"="clinic"](around:8000, {lat}, {lng});
+        );
+        out 15;
+        """
+        url = "http://overpass-api.de/api/interpreter"
+        data = urllib.parse.urlencode({'data': query}).encode('utf-8')
+        req = urllib.request.Request(url, data=data, headers={'User-Agent': 'HeatShieldApp/1.0'})
+        
+        with urllib.request.urlopen(req, timeout=3) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            elements = result.get('elements', [])
+            
+            for el in elements:
+                if 'tags' not in el: continue
+                tags = el['tags']
+                
+                amenity = tags.get('amenity', '')
+                religion = tags.get('religion', '')
+                
+                spot_type = 'cooling_center'
+                if amenity in ['hospital', 'clinic']: spot_type = 'hospital'
+                elif amenity == 'drinking_water': spot_type = 'water'
+                elif religion == 'sikh': spot_type = 'gurudwara'
+                
+                name = tags.get('name', f"Local {spot_type.replace('_', ' ').title()}")
+                
+                # Simple distance approximation using Pythagorean theorem on lat/lng (1 degree ~ 111km)
+                dlat = abs(el['lat'] - lat) * 111
+                dlng = abs(el['lon'] - lng) * 111
+                dist_km = math.sqrt(dlat*dlat + dlng*dlng)
+                dist_str = f"{dist_km:.1f} km" if dist_km >= 1 else f"{int(dist_km*1000)} m"
+                
+                real_spots.append({
+                    "id": str(el['id']),
+                    "name": name,
+                    "type": spot_type,
+                    "lat": el['lat'],
+                    "lng": el['lon'],
+                    "distance": dist_str
+                })
+    except Exception as e:
+        print("Failed to fetch real spots:", e)
+        
+    if len(real_spots) > 0:
+        return {"spots": real_spots}
+
+    # Fallback to mock data if API fails or is empty for that region
     return {
         "spots": [
             {
@@ -130,7 +190,7 @@ def get_safe_spots(lat: float, lng: float):
             },
             {
                 "id": "2",
-                "name": "Community Water Point",
+                "name": "Jal Seva Kiosk",
                 "type": "water",
                 "lat": lat - 0.005,
                 "lng": lng + 0.005,
@@ -138,11 +198,64 @@ def get_safe_spots(lat: float, lng: float):
             },
             {
                 "id": "3",
-                "name": "Public AC Library",
+                "name": "Municipal AC Library",
                 "type": "cooling_center",
                 "lat": lat + 0.008,
                 "lng": lng - 0.002,
                 "distance": "800 m"
+            },
+            {
+                "id": "4",
+                "name": "Gurudwara Langar Hall",
+                "type": "gurudwara",
+                "lat": lat - 0.008,
+                "lng": lng - 0.006,
+                "distance": "1.1 km"
+            },
+            {
+                "id": "5",
+                "name": "Railway Station Water Cooler",
+                "type": "water",
+                "lat": lat + 0.015,
+                "lng": lng - 0.01,
+                "distance": "2.0 km"
+            },
+            {
+                "id": "6",
+                "name": "Sanjeevani Local Clinic",
+                "type": "hospital",
+                "lat": lat - 0.012,
+                "lng": lng + 0.015,
+                "distance": "2.3 km"
+            },
+            {
+                "id": "7",
+                "name": "Community Shade Shelter",
+                "type": "cooling_center",
+                "lat": lat + 0.003,
+                "lng": lng + 0.008,
+                "distance": "600 m"
             }
         ]
     }
+
+@app.post("/api/send-sms")
+def send_sms(req: dict):
+    phone = req.get("phone", "")
+    if not phone: return {"status": "error", "message": "Phone number required"}
+    import time
+    time.sleep(1.5)
+    return {"status": "success", "message": f"Simulated SMS sent to {phone}"}
+
+reported_spots = []
+
+@app.post("/api/report-spot")
+def report_spot(req: dict):
+    spot_id = req.get("id")
+    if spot_id and spot_id not in reported_spots:
+        reported_spots.append(spot_id)
+    return {"status": "success", "reported_spots": reported_spots}
+
+@app.get("/api/reports")
+def get_reports():
+    return {"reported_spots": reported_spots}
