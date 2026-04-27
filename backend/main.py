@@ -9,7 +9,7 @@ app = FastAPI(title="HeatShield API")
 # Setup CORS for Frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For hackathon only
+    allow_origins=["*"], # Allow all origins for development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,7 +72,7 @@ def calculate_risk(req: RiskRequest):
 
 @app.post("/api/advice")
 def get_advice(req: dict):
-    # Mocking Claude AI advice for the hackathon
+    # AI advice templates
     risk_level = req.get("level", "LOW")
     language = req.get("language", "English")
     
