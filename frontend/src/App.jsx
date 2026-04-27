@@ -52,6 +52,35 @@ function MapUpdater({ center }) {
   return null;
 }
 
+const getMarkerIcon = (type) => {
+  let bgColor = 'bg-blue-500';
+  let emoji = '📍';
+  
+  if (type === 'hospital') {
+    bgColor = 'bg-red-500';
+    emoji = '🏥';
+  } else if (type === 'water') {
+    bgColor = 'bg-blue-500';
+    emoji = '💧';
+  } else if (type === 'cooling_center') {
+    bgColor = 'bg-cyan-500';
+    emoji = '❄️';
+  } else if (type === 'gurudwara') {
+    bgColor = 'bg-green-500';
+    emoji = '⛺';
+  }
+
+  const html = `<div class="${bgColor} text-white w-8 h-8 flex items-center justify-center rounded-full shadow-lg border-2 border-white text-lg">${emoji}</div>`;
+  
+  return L.divIcon({
+    html: html,
+    className: 'bg-transparent border-none',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16]
+  });
+};
+
 function App() {
   const [formData, setFormData] = useState({
     age: 35,
@@ -68,6 +97,11 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [showAddSpot, setShowAddSpot] = useState(false);
   const [newSpot, setNewSpot] = useState({ name: '', type: 'water' });
+  const [activeCategory, setActiveCategory] = useState(null);
+
+  const handleCategoryClick = (type) => {
+    setActiveCategory(prev => prev === type ? null : type);
+  };
 
   const currentStateData = stateData[formData.state] || stateData["Telangana"];
   const mapCenter = currentStateData.coords || [17.3850, 78.4867];
@@ -279,10 +313,26 @@ function App() {
                   <MapPin className="h-5 w-5 text-blue-500"/> Nearest Safe Spots
                 </h2>
                 <div className="flex gap-2 items-center flex-wrap">
-                  <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">Hospitals</span>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Water</span>
-                  <span className="px-3 py-1 bg-cyan-100 text-cyan-700 rounded-full text-xs font-bold">Cooling Centers</span>
-                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Gurudwara/NGO</span>
+                  <button 
+                    onClick={() => handleCategoryClick('hospital')}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeCategory === 'hospital' ? 'bg-red-500 text-white shadow-md' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}>
+                    Hospitals
+                  </button>
+                  <button 
+                    onClick={() => handleCategoryClick('water')}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeCategory === 'water' ? 'bg-blue-500 text-white shadow-md' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>
+                    Water
+                  </button>
+                  <button 
+                    onClick={() => handleCategoryClick('cooling_center')}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeCategory === 'cooling_center' ? 'bg-cyan-500 text-white shadow-md' : 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200'}`}>
+                    Cooling Centers
+                  </button>
+                  <button 
+                    onClick={() => handleCategoryClick('gurudwara')}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeCategory === 'gurudwara' ? 'bg-green-500 text-white shadow-md' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
+                    Gurudwara/NGO
+                  </button>
                   
                   <button 
                     onClick={() => setShowAddSpot(true)}
@@ -330,12 +380,22 @@ function App() {
                   <MapUpdater center={mapCenter} />
                   
                   {safeSpots.map(spot => (
-                    <Marker key={spot.id} position={[spot.lat, spot.lng]}>
+                    <Marker key={spot.id} position={[spot.lat, spot.lng]} icon={getMarkerIcon(spot.type)}>
                       <Popup>
-                        <div className="p-1">
+                        <div className="p-1 min-w-[160px]">
                           <p className="font-bold text-slate-800">{spot.name}</p>
                           <p className="text-sm text-slate-500 capitalize">{spot.type.replace('_', ' ')}</p>
-                          <p className="text-sm font-medium text-blue-600 mt-1">{spot.distance}</p>
+                          <div className="flex justify-between items-center mt-3">
+                            <p className="text-sm font-medium text-blue-600">{spot.distance}</p>
+                            <a 
+                              href={`https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}`}
+                              target="_blank" 
+                              rel="noreferrer"
+                              className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-blue-200 transition-colors"
+                            >
+                              Directions
+                            </a>
+                          </div>
                         </div>
                       </Popup>
                     </Marker>
@@ -347,6 +407,34 @@ function App() {
                 </MapContainer>
               </div>
             </div>
+            
+            {activeCategory && (
+              <div className="mt-6 bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 animate-in slide-in-from-top-4 fade-in">
+                <h3 className="font-bold text-lg text-slate-800 mb-4 capitalize">
+                  {activeCategory.replace('_', ' ')} Directory
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {safeSpots.filter(s => s.type === activeCategory).map(spot => (
+                    <div key={spot.id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
+                      <div>
+                        <p className="font-bold text-slate-800">{spot.name}</p>
+                        <p className="text-sm text-slate-500 mt-1 flex items-center gap-1">
+                          <MapPin className="h-3 w-3"/> 
+                          {spot.address || `${spot.name} Center, Main Road`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-blue-600">{spot.distance}</p>
+                        <a href={`https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}`} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:text-blue-800 font-bold underline mt-1 block">Navigate</a>
+                      </div>
+                    </div>
+                  ))}
+                  {safeSpots.filter(s => s.type === activeCategory).length === 0 && (
+                    <p className="text-slate-500 col-span-2">No locations found for this category nearby.</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
