@@ -378,7 +378,7 @@ function App() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 gap-8 mb-8">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><BarChart3 className="h-5 w-5 text-blue-500" /> Weekly Risk Trends</h3>
               <div className="h-64">
@@ -393,29 +393,6 @@ function App() {
                     <Bar dataKey="High" fill="#f97316" radius={[4,4,0,0]} />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Map className="h-5 w-5 text-orange-500" /> Community Reports</h3>
-              <div className="space-y-3">
-                {reportedSpots.length === 0 ? (
-                  <p className="text-slate-500">No issues reported currently.</p>
-                ) : (
-                  reportedSpots.map((id, i) => {
-                    const spot = safeSpots.find(s => s.id === id);
-                    return (
-                      <div key={i} className="flex justify-between items-center p-3 bg-red-50 rounded-xl border border-red-100">
-                        <div>
-                          <p className="font-bold text-red-800">{spot?.name || `Spot #${id}`}</p>
-                          <p className="text-xs text-red-600 font-medium">Reported broken/unavailable</p>
-                        </div>
-                        <button onClick={() => setReportedSpots(prev => prev.filter(sId => sId !== id))} className="px-3 py-1 bg-white text-slate-700 text-xs font-bold rounded-lg border border-slate-200 hover:bg-slate-50">
-                          Resolve
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
               </div>
             </div>
           </div>
