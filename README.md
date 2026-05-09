@@ -13,7 +13,7 @@
 <br />
 
 ## 🌍 Overview
-**HeatShield** is a comprehensive, localized early warning system engineered to protect outdoor workers and vulnerable populations from extreme heatwaves and toxic air quality. By fusing real-time meteorological data with a Machine Learning risk assessment engine, HeatShield provides actionable, hyper-localized intelligence to prevent heat-related casualties.
+**HeatShield** is a comprehensive, localized early warning system engineered to protect outdoor workers and vulnerable populations from extreme heatwaves and toxic air quality. By fusing real time meteorological data with a Machine Learning risk assessment engine, HeatShield provides actionable, hyper-localized intelligence to prevent heat-related casualties.
 
 ## 🚀 Professional Features
 
